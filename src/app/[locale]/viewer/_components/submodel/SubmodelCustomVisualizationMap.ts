@@ -4,6 +4,7 @@ import { BillOfApplicationsDetail } from './bill-of-applications/BillOfApplicati
 import { ReferenceCounterDetail } from './reference-counter/ReferenceCounterDetail';
 import { HierarchicalStructuresDetail } from './hierarchical-structures/HierarchicalStructuresDetail';
 import { TimeSeriesDetail } from './time-series/TimeSeriesDetail';
+import { ProductChangeNotificationComponent } from 'user-plugins/submodels/productChangeNotification/ProductChangeNotificationComponent';
 
 /**
  * This represents the mapping between the submodel and the submodel visulization. If you want to create a new custom
@@ -18,4 +19,5 @@ export const submodelCustomVisualizationMap = {
     [SubmodelSemanticId.HierarchicalStructuresV10]: HierarchicalStructuresDetail,
     [SubmodelSemanticId.HierarchicalStructuresV11]: HierarchicalStructuresDetail,
     [SubmodelSemanticId.BillOfApplications]: BillOfApplicationsDetail,
+    [SubmodelSemanticId.ProductChangeNotifications]: ProductChangeNotificationComponent,
 };

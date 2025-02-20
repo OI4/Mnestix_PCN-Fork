@@ -76,6 +76,8 @@ export function GenericSubmodelElementComponent(props: GenericSubmodelElementCom
                 return <MultiLanguagePropertyComponent mLangProp={props.submodelElement as MultiLanguageProperty} />;
             case KeyTypes.Entity:
                 return <EntityComponent entity={props.submodelElement as Entity} />;
+            case KeyTypes.BasicEventElement:
+                return <>BasicEventElement</>;
             default:
                 return (
                     <Typography color="error" variant="body2">
