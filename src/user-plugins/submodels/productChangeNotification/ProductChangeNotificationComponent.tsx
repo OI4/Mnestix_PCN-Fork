@@ -1,7 +1,8 @@
+import { submodelElementCollectionFromJsonable } from '@aas-core-works/aas-core3.0-typescript/jsonization';
+import { BasicEventElement, Property, SubmodelElementCollection } from '@aas-core-works/aas-core3.0-typescript/types';
 import { SubmodelVisualizationProps } from 'app/[locale]/viewer/_components/submodel/SubmodelVisualizationProps';
 import { ExpandableDefaultSubmodelDisplay } from 'components/basics/ExpandableNestedContentWrapper';
 import { hasSemanticId } from 'lib/util/SubmodelResolverUtil';
-import { BasicEventElement } from '@aas-core-works/aas-core3.0-typescript/types';
 import mqtt, { MqttClient } from 'mqtt';
 import { useEffect, useState } from 'react';
 import { MqttDialog } from 'user-plugins/submodels/productChangeNotification/MqttDialog';
@@ -57,6 +58,41 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
                         message: message.toString(),
                     };
                     console.log('Message recieved: ', receivedMessage);
+                    const json = JSON.parse(receivedMessage.message);
+                    let url = json.submodel.changeRecord;
+                    url = url.replace('[', '%5B').replace(']', '%5D');
+                    fetch(url)
+                        .then((response) => {
+                            console.log(response);
+                            if (response.ok) {
+                                return response.text();
+                            }
+                            throw new Error('Error message.');
+                        })
+                        .then((data) => {
+                            const testdata = JSON.parse(data);
+                            const parsedModel = submodelElementCollectionFromJsonable(testdata);
+                            const jsonCollection = parsedModel.value;
+
+                            const reasonOfChanges = (
+                                jsonCollection?.value?.find(
+                                    (sme) => sme.idShort === 'ReasonsOfChange',
+                                ) as SubmodelElementCollection
+                            )?.value;
+                            const dateOfRecord = (
+                                jsonCollection?.value?.find((sme) => sme.idShort === 'DateOfRecord') as Property
+                            )?.value;
+                            const newObj: { DateOfRecord?: string; ReasonOfChange: string } = {
+                                ReasonOfChange:
+                                    (reasonOfChanges?.find((sme) => sme.idShort === 'ReasonOfChange') as Property)
+                                        ?.value ?? 'No reason provided',
+                                DateOfRecord: dateOfRecord ?? 'No date provided',
+                            };
+                            setMessages(JSON.stringify(newObj));
+                        })
+                        .catch(function (err) {
+                            console.log('failed to load ', json.submodel.changeRecord, err.stack);
+                        });
                     setMessages(receivedMessage.message);
                     handleDetailsModalOpen();
                 });
