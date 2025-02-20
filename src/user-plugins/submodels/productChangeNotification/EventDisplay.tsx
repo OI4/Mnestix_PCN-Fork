@@ -6,7 +6,7 @@ type EventDisplayProps = {
 };
 
 const EventDisplay = ({ event }: EventDisplayProps) => {
-    console.log(event);
+    //console.log(event);
 
     const broker = event.messageBroker;
 
@@ -17,7 +17,10 @@ const EventDisplay = ({ event }: EventDisplayProps) => {
             </Typography>
             <Typography>Direction: {event.direction}</Typography>
             <Typography>State: {event.state}</Typography>
-            {broker && (broker as Reference).keys.map((key, index) => <Typography key={index}>{key.value}</Typography>)}
+            {broker &&
+                (broker as Reference).keys.map((key, index) => (
+                    <Typography key={index}>Broker: {key.value}</Typography>
+                ))}
         </>
     );
 };
