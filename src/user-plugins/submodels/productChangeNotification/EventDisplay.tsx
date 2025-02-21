@@ -6,8 +6,6 @@ type EventDisplayProps = {
 };
 
 const EventDisplay = ({ event }: EventDisplayProps) => {
-    //console.log(event);
-
     const broker = event.messageBroker;
 
     return (
