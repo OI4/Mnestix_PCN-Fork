@@ -10,8 +10,7 @@ import { MqttDialog } from 'user-plugins/submodels/productChangeNotification/Mqt
 export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisualizationProps) => {
     const [messages, setMessages] = useState<string>('');
     const [client, setClient] = useState<MqttClient | null>(null);
-    const [isConnected, setIsConnected] = useState(false);
-    //console.log(submodel);
+    const [, setIsConnected] = useState(false);
     const [addModalOpen, setAddModalOpen] = useState(false);
 
     const event = submodel.submodelElements!.find((el) =>
@@ -104,7 +103,6 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
 
                 newClient.on('close', () => {
                     console.log('Disconnected from MQTT Broker');
-                    //connectToMqtt();
                     setIsConnected(false);
                     setClient(null);
                 });
