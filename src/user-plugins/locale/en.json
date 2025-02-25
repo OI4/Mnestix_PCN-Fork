@@ -3,6 +3,10 @@
     "submodels": {
       "hello-world-component": {
         "title": "Hello World!"
+      },
+      "productChangeNotification": {
+        "connected": "Connected: ",
+        "subscribed": "Subscribed to topic: "
       }
     }
   }

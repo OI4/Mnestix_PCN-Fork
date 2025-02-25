@@ -1,4 +1,3 @@
-import { submodelElementCollectionFromJsonable } from '@aas-core-works/aas-core3.0-typescript/jsonization';
 import { BasicEventElement, Property, SubmodelElementCollection } from '@aas-core-works/aas-core3.0-typescript/types';
 import { SubmodelVisualizationProps } from 'app/[locale]/viewer/_components/submodel/SubmodelVisualizationProps';
 import { ExpandableDefaultSubmodelDisplay } from 'components/basics/ExpandableNestedContentWrapper';
@@ -6,32 +5,38 @@ import { hasSemanticId } from 'lib/util/SubmodelResolverUtil';
 import mqtt, { MqttClient } from 'mqtt';
 import { useEffect, useState } from 'react';
 import { MqttDialog } from 'user-plugins/submodels/productChangeNotification/MqttDialog';
+import FiberManualRecordIcon from '@mui/icons-material/CheckCircleOutline';
+import { Box, Grid, Typography } from '@mui/material';
+import { useTranslations } from 'next-intl';
 
 export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisualizationProps) => {
+    const t = useTranslations('user-plugins.submodels.productChangeNotification');
     const [messages, setMessages] = useState<string>('');
     const [client, setClient] = useState<MqttClient | null>(null);
-    const [, setIsConnected] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
     const [addModalOpen, setAddModalOpen] = useState(false);
 
     const event = submodel.submodelElements!.find((el) =>
         hasSemanticId(el, 'http://admin-shell.io/VDMA/Fluidics/ProductChangeNotification/EventsOutgoing/1/0'),
     );
-    const records = submodel.submodelElements!.find((el) =>
+    submodel.submodelElements!.find((el) =>
         hasSemanticId(el, 'http://admin-shell.io/VDMA/Fluidics/ProductChangeNotification/Record/List/1/0'),
     );
-
     const mqttBrokerTopic = (event as BasicEventElement).messageTopic;
-    //const mqttEndpointCollection = submodel.submodelElements!.find((el) => el.idShort == 'BrokerInformation');
-    //const mqttEndpoint = (
-    //    (mqttEndpointCollection as SubmodelElementCollection).value?.find(
-    //        (el) => el.idShort === 'EndpointWss',
-    //    ) as Property
-    //).value;
+    const mqttEndpointCollection = submodel.submodelElements!.find((el) => el.idShort == 'BrokerInformation');
+    const mqttEndpoint = (
+        (mqttEndpointCollection as SubmodelElementCollection).value?.find(
+            (el) => el.idShort === 'EndpointWss',
+        ) as Property
+    ).value;
 
     useEffect(() => {
         const connectToMqtt = () => {
             try {
-                const newClient = mqtt.connect('ws://pcn-hackathon.westeurope.cloudapp.azure.com:15675/ws', {
+                if (mqttEndpoint == null || mqttBrokerTopic == null) {
+                    throw new Error('No mqttBrokerTopic found.');
+                }
+                const newClient = mqtt.connect(mqttEndpoint, {
                     connectTimeout: 10000,
                     username: 'rabbit-user',
                     password: 'JvFNXcxtm5AAh3Wj0yry',
@@ -41,7 +46,7 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
                 newClient.on('connect', () => {
                     console.log('Connected to MQTT Broker');
                     setIsConnected(true);
-                    newClient.subscribe(mqttBrokerTopic!, (err) => {
+                    newClient.subscribe(mqttBrokerTopic, (err) => {
                         if (err) {
                             console.error('Error subscribing to topic:', err);
                         } else {
@@ -50,7 +55,6 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
                     });
                     setClient(newClient);
                 });
-
                 newClient.on('message', (topic, message) => {
                     const receivedMessage = {
                         topic: topic,
@@ -69,31 +73,22 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
                             throw new Error('Error message.');
                         })
                         .then((data) => {
-                            const testdata = JSON.parse(data);
-                            const parsedModel = submodelElementCollectionFromJsonable(testdata);
-                            const jsonCollection = parsedModel.value;
+                            const testData = JSON.parse(data);
 
-                            const reasonOfChanges = (
-                                jsonCollection?.value?.find(
-                                    (sme) => sme.idShort === 'ReasonsOfChange',
-                                ) as SubmodelElementCollection
-                            )?.value;
-                            const dateOfRecord = (
-                                jsonCollection?.value?.find((sme) => sme.idShort === 'DateOfRecord') as Property
-                            )?.value;
+                            const reasonOfChanges = JSON.stringify(testData?.ReasonsOfChange);
+
+                            const dateOfRecord = testData?.DateOfRecord;
                             const newObj: { DateOfRecord?: string; ReasonOfChange: string } = {
-                                ReasonOfChange:
-                                    (reasonOfChanges?.find((sme) => sme.idShort === 'ReasonOfChange') as Property)
-                                        ?.value ?? 'No reason provided',
+                                ReasonOfChange: reasonOfChanges ?? 'No reason provided ??',
                                 DateOfRecord: dateOfRecord ?? 'No date provided',
                             };
+
                             setMessages(JSON.stringify(newObj));
+                            handleDetailsModalOpen();
                         })
                         .catch(function (err) {
                             console.log('failed to load ', json.submodel.changeRecord, err.stack);
                         });
-                    setMessages(receivedMessage.message);
-                    handleDetailsModalOpen();
                 });
 
                 newClient.on('error', (error) => {
@@ -133,12 +128,33 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
 
     return (
         <>
-            {messages}
+            {/*{messages}*/}
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Grid container alignItems="center" spacing={1} justifyContent="space-between">
+                    <Grid item>
+                        <Typography variant="h4" component="h5" gutterBottom>
+                            {t('connected')}
+                        </Typography>
+                    </Grid>
+                    <Grid item>
+                        {' '}
+                        <FiberManualRecordIcon sx={{ color: isConnected ? 'green' : 'red', fontSize: '1.2rem' }} />
+                    </Grid>
+                </Grid>
+
+                <Grid container alignItems="center" spacing={1} justifyContent="space-between">
+                    <Grid item xs>
+                        <Typography variant="h4" component="h5" gutterBottom>
+                            {t('subscribed')}
+                        </Typography>
+                    </Grid>
+                    <Grid item>
+                        <Typography variant="body1">{mqttBrokerTopic}</Typography>
+                    </Grid>
+                </Grid>
+            </Box>
 
             <MqttDialog open={addModalOpen} message={messages} onClose={handleDetailsModalClose} />
-
-            {/*<EventDisplay event={event as BasicEventElement} />*/}
-            {/*<RecordsDisplay records={records as SubmodelElementCollection} />*/}
             <ExpandableDefaultSubmodelDisplay submodel={submodel} />
         </>
     );
