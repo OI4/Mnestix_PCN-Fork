@@ -2,19 +2,15 @@ import { BasicEventElement, Property, SubmodelElementCollection } from '@aas-cor
 import { SubmodelVisualizationProps } from 'app/[locale]/viewer/_components/submodel/SubmodelVisualizationProps';
 import { ExpandableDefaultSubmodelDisplay } from 'components/basics/ExpandableNestedContentWrapper';
 import { hasSemanticId } from 'lib/util/SubmodelResolverUtil';
-import { useEffect, useState } from 'react';
-import { MqttDialog } from 'user-plugins/submodels/productChangeNotification/MqttDialog';
+import { useEffect } from 'react';
 import FiberManualRecordIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Grid, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useMqtt } from 'components/contexts/MqttContext';
-import { useAsyncEffect } from 'lib/hooks/UseAsyncEffect';
 
 export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisualizationProps) => {
     const t = useTranslations('user-plugins.submodels.productChangeNotification');
-    const [messages, setMessages] = useState<string>('');
-    const [addModalOpen, setAddModalOpen] = useState(false);
-    const { consumeMessage, subscribe, disconnect, isConnected } = useMqtt();
+    const { subscribe, isConnected } = useMqtt();
 
     const event = submodel.submodelElements!.find((el) =>
         hasSemanticId(el, 'http://admin-shell.io/VDMA/Fluidics/ProductChangeNotification/EventsOutgoing/1/0'),
@@ -31,32 +27,8 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
     ).value;
 
     useEffect(() => {
-        subscribe(
-            mqttEndpoint!,
-            mqttBrokerTopic!,
-            'rabbit-user',
-            'JvFNXcxtm5AAh3Wj0yry',
-        );
-        return () => {
-            disconnect();
-            setMessages('');
-        };
+        subscribe(mqttEndpoint!, mqttBrokerTopic!, 'rabbit-user', 'JvFNXcxtm5AAh3Wj0yry');
     }, []);
-
-    useAsyncEffect(async () => {
-        const message = consumeMessage();
-        if(message != null){
-            await handleMqttMessage(message, setMessages, handleDetailsModalOpen);
-        }
-    }, [consumeMessage]);
-
-    const handleDetailsModalOpen = () => {
-        setAddModalOpen(true);
-    };
-
-    const handleDetailsModalClose = () => {
-        setAddModalOpen(false);
-    };
 
     return (
         <>
@@ -86,7 +58,6 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
                 </Grid>
             </Box>
 
-            <MqttDialog open={addModalOpen} message={messages} onClose={handleDetailsModalClose} />
             <ExpandableDefaultSubmodelDisplay submodel={submodel} />
         </>
     );
@@ -103,7 +74,7 @@ export const handleMqttMessage = async (
 
         let url = receivedMessage?.submodel?.changeRecord;
         if (!url) {
-            console.error('Invalid message format: Missing \'submodel.changeRecord\'');
+            console.error('Invalid message format: Missing submodel.changeRecord');
             return;
         }
 

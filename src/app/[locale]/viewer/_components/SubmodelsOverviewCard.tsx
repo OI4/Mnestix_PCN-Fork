@@ -10,6 +10,10 @@ import { SortNameplateElements } from 'app/[locale]/viewer/_components/submodel/
 import { SubmodelOrIdReference } from 'components/contexts/CurrentAasContext';
 import ErrorBoundary from 'components/basics/ErrorBoundary';
 import { useTranslations } from 'next-intl';
+import { MqttDialog } from 'user-plugins/submodels/productChangeNotification/MqttDialog';
+import { useAsyncEffect } from 'lib/hooks/UseAsyncEffect';
+import { handleMqttMessage } from 'user-plugins/submodels/productChangeNotification/ProductChangeNotificationComponent';
+import { useMqtt } from 'components/contexts/MqttContext';
 
 export type SubmodelsOverviewCardProps = {
     readonly submodelIds: SubmodelOrIdReference[] | undefined;
@@ -20,6 +24,9 @@ export function SubmodelsOverviewCard({ submodelIds, submodelsLoading }: Submode
     const [submodelSelectorItems, setSubmodelSelectorItems] = useState<TabSelectorItem[]>([]);
     const [selectedItem, setSelectedItem] = useState<TabSelectorItem>();
     const t = useTranslations('submodels');
+    const [messages, setMessages] = useState<string>('');
+    const [addModalOpen, setAddModalOpen] = useState(false);
+    const { consumeMessage, disconnect } = useMqtt();
 
     SortNameplateElements(selectedItem?.submodelData);
 
@@ -57,6 +64,14 @@ export function SubmodelsOverviewCard({ submodelIds, submodelsLoading }: Submode
     }
 
     useEffect(() => {
+        return () => {
+            console.log('Component unmounted, disconnecting MQTT...');
+            disconnect();
+            setMessages('');
+        };
+    }, []);
+
+    useEffect(() => {
         setOpen(!!selectedItem && isMobile);
     }, [isMobile, selectedItem]);
 
@@ -71,6 +86,13 @@ export function SubmodelsOverviewCard({ submodelIds, submodelsLoading }: Submode
             setSelectedItem(nameplateTab);
         }
     }, [isMobile, submodelSelectorItems]);
+
+    useAsyncEffect(async () => {
+        const message = consumeMessage();
+        if (message != null) {
+            await handleMqttMessage(message, setMessages, handleDetailsModalOpen);
+        }
+    }, [consumeMessage]);
 
     const handleClose = () => {
         setOpen(false);
@@ -101,35 +123,46 @@ export function SubmodelsOverviewCard({ submodelIds, submodelsLoading }: Submode
         return null;
     }
 
+    const handleDetailsModalOpen = () => {
+        setAddModalOpen(true);
+    };
+
+    const handleDetailsModalClose = () => {
+        setAddModalOpen(false);
+    };
+
     return (
-        <Card>
-            <CardContent>
-                <Typography variant="h3" marginBottom="15px">
-                    {t('title')}
-                </Typography>
-                <Box display="grid" gridTemplateColumns={isMobile ? '1fr' : '1fr 2fr'} gap="40px">
-                    <Box>
-                        <VerticalTabSelector
-                            items={submodelSelectorItems}
-                            selected={selectedItem}
-                            setSelected={setSelectedItem}
-                        />
-                        {submodelsLoading && (
-                            <Skeleton height={70} sx={{ mb: 2 }} data-testid="submodelOverviewLoadingSkeleton" />
+        <>
+            <Card>
+                <CardContent>
+                    <Typography variant="h3" marginBottom="15px">
+                        {t('title')}
+                    </Typography>
+                    <Box display="grid" gridTemplateColumns={isMobile ? '1fr' : '1fr 2fr'} gap="40px">
+                        <Box>
+                            <VerticalTabSelector
+                                items={submodelSelectorItems}
+                                selected={selectedItem}
+                                setSelected={setSelectedItem}
+                            />
+                            {submodelsLoading && (
+                                <Skeleton height={70} sx={{ mb: 2 }} data-testid="submodelOverviewLoadingSkeleton" />
+                            )}
+                        </Box>
+                        {isMobile ? (
+                            <MobileModal
+                                title={selectedItem?.label}
+                                open={open}
+                                handleClose={handleClose}
+                                content={SelectedContent()}
+                            />
+                        ) : (
+                            <SelectedContent />
                         )}
                     </Box>
-                    {isMobile ? (
-                        <MobileModal
-                            title={selectedItem?.label}
-                            open={open}
-                            handleClose={handleClose}
-                            content={SelectedContent()}
-                        />
-                    ) : (
-                        <SelectedContent />
-                    )}
-                </Box>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+            <MqttDialog open={addModalOpen} message={messages} onClose={handleDetailsModalClose} />
+        </>
     );
 }
