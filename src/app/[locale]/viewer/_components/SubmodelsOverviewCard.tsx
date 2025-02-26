@@ -10,7 +10,6 @@ import { SortNameplateElements } from 'app/[locale]/viewer/_components/submodel/
 import { SubmodelOrIdReference } from 'components/contexts/CurrentAasContext';
 import ErrorBoundary from 'components/basics/ErrorBoundary';
 import { useTranslations } from 'next-intl';
-import { useMqtt } from 'components/contexts/MqttContext';
 
 export type SubmodelsOverviewCardProps = {
     readonly submodelIds: SubmodelOrIdReference[] | undefined;
