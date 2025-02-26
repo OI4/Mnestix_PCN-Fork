@@ -2,19 +2,19 @@ import { BasicEventElement, Property, SubmodelElementCollection } from '@aas-cor
 import { SubmodelVisualizationProps } from 'app/[locale]/viewer/_components/submodel/SubmodelVisualizationProps';
 import { ExpandableDefaultSubmodelDisplay } from 'components/basics/ExpandableNestedContentWrapper';
 import { hasSemanticId } from 'lib/util/SubmodelResolverUtil';
-import mqtt, { MqttClient } from 'mqtt';
 import { useEffect, useState } from 'react';
 import { MqttDialog } from 'user-plugins/submodels/productChangeNotification/MqttDialog';
 import FiberManualRecordIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Grid, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
+import { useMqtt } from 'components/contexts/MqttContext';
+import { useAsyncEffect } from 'lib/hooks/UseAsyncEffect';
 
 export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisualizationProps) => {
     const t = useTranslations('user-plugins.submodels.productChangeNotification');
     const [messages, setMessages] = useState<string>('');
-    const [client, setClient] = useState<MqttClient | null>(null);
-    const [isConnected, setIsConnected] = useState(false);
     const [addModalOpen, setAddModalOpen] = useState(false);
+    const { consumeMessage, subscribe, disconnect, isConnected } = useMqtt();
 
     const event = submodel.submodelElements!.find((el) =>
         hasSemanticId(el, 'http://admin-shell.io/VDMA/Fluidics/ProductChangeNotification/EventsOutgoing/1/0'),
@@ -31,6 +31,26 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
     ).value;
 
     useEffect(() => {
+        subscribe(
+            mqttEndpoint!,
+            mqttBrokerTopic!,
+            'rabbit-user',
+            'JvFNXcxtm5AAh3Wj0yry',
+        );
+        return () => {
+            disconnect();
+            setMessages('');
+        };
+    }, []);
+
+    useAsyncEffect(async () => {
+        const message = consumeMessage();
+        if(message != null){
+            await handleMqttMessage(message, setMessages, handleDetailsModalOpen);
+        }
+    }, [consumeMessage]);
+
+    /*useEffect(() => {
         const connectToMqtt = () => {
             try {
                 if (mqttEndpoint == null || mqttBrokerTopic == null) {
@@ -116,7 +136,7 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
                 console.log('MQTT Client Disconnected');
             }
         };
-    }, []);
+    }, []);*/
 
     const handleDetailsModalOpen = () => {
         setAddModalOpen(true);
@@ -158,4 +178,46 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
             <ExpandableDefaultSubmodelDisplay submodel={submodel} />
         </>
     );
+};
+
+export const handleMqttMessage = async (
+    message: string,
+    setMessages: (msg: string) => void,
+    handleDetailsModalOpen: () => void,
+) => {
+    try {
+        const receivedMessage = JSON.parse(message);
+        console.log('Message received:', receivedMessage);
+
+        let url = receivedMessage?.submodel?.changeRecord;
+        if (!url) {
+            console.error('Invalid message format: Missing \'submodel.changeRecord\'');
+            return;
+        }
+
+        url = url.replace('[', '%5B').replace(']', '%5D');
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.text();
+        const parsedData = JSON.parse(data);
+
+        const reasonOfChanges = JSON.stringify(parsedData?.ReasonsOfChange) ?? 'No reason provided';
+        const dateOfRecord = parsedData?.DateOfRecord ?? 'No date provided';
+
+        const newObj = {
+            ReasonOfChange: reasonOfChanges,
+            DateOfRecord: dateOfRecord,
+        };
+
+        setMessages(JSON.stringify(newObj));
+
+        // Open modal or trigger UI update
+        handleDetailsModalOpen();
+    } catch (err) {
+        console.error('Failed to process message:', err);
+    }
 };

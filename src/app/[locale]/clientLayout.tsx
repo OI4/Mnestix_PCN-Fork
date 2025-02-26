@@ -9,6 +9,7 @@ import { Internationalization } from 'lib/i18n/Internationalization';
 import { ReactNode } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { EnvProvider } from 'app/env/provider';
+import { MqttProvider } from 'components/contexts/MqttContext';
 
 export type ClientLayoutProps = {
     children: ReactNode;
@@ -23,9 +24,11 @@ export const ClientLayout = ({ children }: Readonly<ClientLayoutProps>) => {
                         <CurrentAasContextProvider>
                             <NotificationContextProvider>
                                 <LayoutRoot>
-                                    <Box flexGrow={1} data-testid="notifications">
-                                        {children}
-                                    </Box>
+                                    <MqttProvider>
+                                        <Box flexGrow={1} data-testid="notifications">
+                                            {children}
+                                        </Box>
+                                    </MqttProvider>
                                 </LayoutRoot>
                             </NotificationContextProvider>
                         </CurrentAasContextProvider>

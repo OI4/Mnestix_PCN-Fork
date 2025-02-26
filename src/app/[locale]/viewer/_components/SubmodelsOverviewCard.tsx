@@ -10,6 +10,7 @@ import { SortNameplateElements } from 'app/[locale]/viewer/_components/submodel/
 import { SubmodelOrIdReference } from 'components/contexts/CurrentAasContext';
 import ErrorBoundary from 'components/basics/ErrorBoundary';
 import { useTranslations } from 'next-intl';
+import { useMqtt } from 'components/contexts/MqttContext';
 
 export type SubmodelsOverviewCardProps = {
     readonly submodelIds: SubmodelOrIdReference[] | undefined;
@@ -44,14 +45,14 @@ export function SubmodelsOverviewCard({ submodelIds, submodelsLoading }: Submode
                 id: submodelId.id,
                 label: submodelId.submodel.idShort ?? '',
                 submodelData: submodelId.submodel,
-                startIcon: <InfoIcon/>,
+                startIcon: <InfoIcon />,
             };
         } else {
             return {
                 id: submodelId.id,
                 label: submodelId.id,
                 startIcon: <LinkOffIcon />,
-                submodelError: submodelId.error ?? 'UNKNOWN'
+                submodelError: submodelId.error ?? 'UNKNOWN',
             };
         }
     }
