@@ -1,15 +1,10 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 import mqtt, { MqttClient } from 'mqtt';
 
 // Define the context type
 interface MqttContextType {
     consumeMessage: () => string | null;
-    subscribe: (
-        brokerUrl: string,
-        topic: string,
-        userName?: string,
-        password?: string,
-    ) => void;
+    subscribe: (brokerUrl: string, topic: string, userName?: string, password?: string) => void;
     disconnect: () => void;
     isConnected: boolean;
 }
@@ -17,37 +12,30 @@ interface MqttContextType {
 const MqttContext = createContext<MqttContextType | undefined>(undefined);
 
 export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [client, setClient] = useState<MqttClient | null>(null);
+    const clientRef = useRef<MqttClient | null>(null);
     const [contextMessage, setContextMessage] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [currentTopic, setCurrentTopic] = useState<string | null>(null);
     const [currentBrokerUrl, setCurrentBrokerUrl] = useState<string | null>(null);
 
-    const subscribe = (
-        brokerUrl: string,
-        topic: string,
-        userName?: string,
-        password?: string,
-    ) => {
-        if (currentBrokerUrl === brokerUrl && currentTopic === topic) {
+    const subscribe = (brokerUrl: string, topic: string, userName?: string, password?: string) => {
+        if (clientRef.current && isConnected && currentBrokerUrl === brokerUrl && currentTopic === topic) {
             console.log('Already connected to this topic');
             return;
         }
 
-        if (client) {
-            client.end();
-            setIsConnected(false);
-        }
-        const mqttClient = mqtt.connect(brokerUrl, {
+        disconnect();
+
+        clientRef.current = mqtt.connect(brokerUrl, {
             connectTimeout: 10000,
             username: userName,
             password: password,
             rejectUnauthorized: false,
         });
 
-        mqttClient.on('connect', () => {
+        clientRef.current.on('connect', () => {
             console.log('Connected to MQTT Broker');
-            mqttClient.subscribe(topic, (err) => {
+            clientRef.current?.subscribe(topic, (err) => {
                 if (err) {
                     console.error('Subscription error:', err);
                 } else {
@@ -59,7 +47,7 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
         });
 
-        mqttClient.on('message', (receivedTopic, payload) => {
+        clientRef.current.on('message', (receivedTopic, payload) => {
             if (receivedTopic === topic) {
                 const message = payload.toString();
                 console.log(`Message received on ${topic}: ${message}`);
@@ -67,30 +55,26 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         });
 
-        mqttClient.on('error', (error) => {
+        clientRef.current.on('error', (error) => {
             console.error('MQTT Error:', error);
             setIsConnected(false);
         });
 
-        mqttClient.on('close', () => {
+        clientRef.current.on('close', () => {
             console.log('Disconnected from MQTT Broker');
             setIsConnected(false);
-            setClient(null);
+            clientRef.current = null;
         });
-
-        setClient(mqttClient);
     };
-    
+
     const disconnect = () => {
-        if (client && currentTopic) {
+        if (clientRef.current && currentTopic) {
             console.log(`Unsubscribing from topic: ${currentTopic}`);
-            client.unsubscribe(currentTopic, () => {
+            clientRef.current.unsubscribe(currentTopic, () => {
                 console.log('Unsubscribed successfully');
             });
-
-            console.log('Disconnecting from MQTT broker');
-            client.end();
-            setClient(null);
+            clientRef.current.end();
+            clientRef.current = null;
             setIsConnected(false);
             setCurrentTopic(null);
             setCurrentBrokerUrl(null);
@@ -105,7 +89,9 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <MqttContext.Provider value={{ consumeMessage, subscribe, disconnect, isConnected }}>{children}</MqttContext.Provider>
+        <MqttContext.Provider value={{ consumeMessage, subscribe, disconnect, isConnected }}>
+            {children}
+        </MqttContext.Provider>
     );
 };
 
