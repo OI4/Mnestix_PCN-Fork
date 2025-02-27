@@ -22,8 +22,16 @@ const Title = styled(Typography)(({ theme }) => ({
 export function MqttDialog(props: MqttDialogProps) {
     if (!props.message || props.message === '') return;
 
-    const jsonParsed = JSON.parse(props.message);
-    const reasonOfChange = JSON.parse(jsonParsed.ReasonOfChange)[0];
+    let reasonOfChange;
+    let jsonParsed;
+
+    try {
+        jsonParsed = JSON.parse(props.message);
+        reasonOfChange = JSON.parse(jsonParsed.ReasonOfChange)[0];
+    } catch (err) {
+        console.warn('Error while parsing the message:', err);
+        return;
+    }
 
     if (!reasonOfChange) return;
 
@@ -53,15 +61,17 @@ export function MqttDialog(props: MqttDialogProps) {
                 <Box sx={{ marginTop: 2 }}>
                     <Item>
                         <Title variant="subtitle1">Version of Classification System:</Title>
-                        <Typography variant="body2">{reasonOfChange.VersionOfClassificationSystem}</Typography>
+                        <Typography variant="body2">
+                            {reasonOfChange?.VersionOfClassificationSystem || 'N/A'}
+                        </Typography>
                     </Item>
                     <Item>
                         <Title variant="subtitle1">Reason ID:</Title>
-                        <Typography variant="body2">{reasonOfChange.ReasonId}</Typography>
+                        <Typography variant="body2">{reasonOfChange?.ReasonId || 'N/A'}</Typography>
                     </Item>
                     <Item>
                         <Title variant="subtitle1">Reason Classification System:</Title>
-                        <Typography variant="body2">{reasonOfChange.ReasonClassificationSystem}</Typography>
+                        <Typography variant="body2">{reasonOfChange?.ReasonClassificationSystem || 'N/A'}</Typography>
                     </Item>
                     <Item>
                         <Title variant="subtitle1">Date of Record:</Title>

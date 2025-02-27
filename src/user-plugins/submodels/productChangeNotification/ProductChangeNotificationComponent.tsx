@@ -32,7 +32,6 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
 
     return (
         <>
-            {/*{messages}*/}
             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                 <Grid container alignItems="center" spacing={1} justifyContent="space-between">
                     <Grid item>
