@@ -10,7 +10,7 @@ import { useMqtt } from 'components/contexts/MqttContext';
 
 export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisualizationProps) => {
     const t = useTranslations('user-plugins.submodels.productChangeNotification');
-    const { subscribe, isConnected } = useMqtt();
+    const { client, subscribe, isConnected } = useMqtt();
 
     const event = submodel.submodelElements!.find((el) =>
         hasSemanticId(el, 'http://admin-shell.io/VDMA/Fluidics/ProductChangeNotification/EventsOutgoing/1/0'),
@@ -27,7 +27,9 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
     ).value;
 
     useEffect(() => {
-        subscribe(mqttEndpoint!, mqttBrokerTopic!, 'rabbit-user', 'JvFNXcxtm5AAh3Wj0yry');
+        if (!client && !isConnected) {
+            subscribe(mqttEndpoint!, mqttBrokerTopic!, 'rabbit-user', 'JvFNXcxtm5AAh3Wj0yry');
+        }
     }, []);
 
     return (
@@ -69,7 +71,6 @@ export const handleMqttMessage = async (
 ) => {
     try {
         const receivedMessage = JSON.parse(message);
-        console.log('Message received:', receivedMessage);
 
         let url = receivedMessage?.submodel?.changeRecord;
         if (!url) {
