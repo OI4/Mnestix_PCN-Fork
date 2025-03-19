@@ -89,11 +89,14 @@ export const handleMqttMessage = async (
         const parsedData = JSON.parse(data);
 
         const reasonOfChanges = JSON.stringify(parsedData?.ReasonsOfChange) ?? 'No reason provided';
+        const pcnChangeInformation =
+            JSON.stringify(parsedData?.PcnChangeInformation) ?? 'No Change Information Provided';
         const dateOfRecord = parsedData?.DateOfRecord ?? 'No date provided';
 
         const newObj = {
             ReasonOfChange: reasonOfChanges,
             DateOfRecord: dateOfRecord,
+            PcnChangeInformation: pcnChangeInformation,
         };
 
         setMessages(JSON.stringify(newObj));

@@ -6,7 +6,8 @@
       },
       "productChangeNotification": {
         "connected": "Verbunden: ",
-        "subscribed": "Zum Thema angemeldet: "
+        "subscribed": "Zum Thema angemeldet: ",
+        "dialogTitle": "Product Change Notification"
       }
     }
   }

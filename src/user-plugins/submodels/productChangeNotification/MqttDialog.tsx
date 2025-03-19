@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, IconButton, Typography, styled, Box } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import moment from 'moment';
+import { useTranslations } from 'next-intl';
 
 type MqttDialogProps = {
     readonly message: string;
@@ -20,14 +21,17 @@ const Title = styled(Typography)(({ theme }) => ({
 }));
 
 export function MqttDialog(props: MqttDialogProps) {
+    const t = useTranslations('user-plugins.submodels.productChangeNotification');
     if (!props.message || props.message === '') return;
 
     let reasonOfChange;
+    let pcnChangeInformation;
     let jsonParsed;
 
     try {
         jsonParsed = JSON.parse(props.message);
         reasonOfChange = JSON.parse(jsonParsed.ReasonOfChange)[0];
+        pcnChangeInformation = JSON.parse(jsonParsed.PcnChangeInformation);
     } catch (err) {
         console.warn('Error while parsing the message:', err);
         return;
@@ -58,7 +62,18 @@ export function MqttDialog(props: MqttDialogProps) {
                 <CloseIcon />
             </IconButton>
             <DialogContent style={{ paddingLeft: '60px', paddingRight: '60px' }}>
+                <Typography variant="h2" color={'primary'}>
+                    {t('dialogTitle')}
+                </Typography>
                 <Box sx={{ marginTop: 2 }}>
+                    <Item>
+                        <Title variant="subtitle1">Change Title:</Title>
+                        <Typography variant="body2">{pcnChangeInformation?.ChangeTitle[0].en || 'N/A'}</Typography>
+                    </Item>
+                    <Item>
+                        <Title variant="subtitle1">Change Detail:</Title>
+                        <Typography variant="body2">{pcnChangeInformation?.ChangeDetail[0].en || 'N/A'}</Typography>
+                    </Item>
                     <Item>
                         <Title variant="subtitle1">Version of Classification System:</Title>
                         <Typography variant="body2">

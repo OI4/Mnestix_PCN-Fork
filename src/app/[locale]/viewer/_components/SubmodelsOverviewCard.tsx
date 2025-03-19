@@ -129,6 +129,7 @@ export function SubmodelsOverviewCard({ submodelIds, submodelsLoading }: Submode
 
     const handleDetailsModalClose = () => {
         setAddModalOpen(false);
+        window.location.reload();
     };
 
     return (
