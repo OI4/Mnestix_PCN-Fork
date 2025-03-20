@@ -29,6 +29,8 @@ export const getEnv = async (): Promise<EnvironmentalVariables> => {
         KEYCLOAK_ENABLED: process.env.KEYCLOAK_ENABLED?.toLowerCase() === 'true'.toLowerCase(),
         IMPRINT_URL: process.env.IMPRINT_URL,
         DATA_PRIVACY_URL: process.env.DATA_PRIVACY_URL,
+        MQTT_LOGIN: process.env.MQTTT_LOGIN,
+        MQTT_PASSWORD: process.env.MQTTT_PASSWORD,
     };
 
     const themingVariables = {
@@ -77,4 +79,6 @@ export type EnvironmentalVariables = {
     IMPRINT_URL: string | undefined;
     DATA_PRIVACY_URL: string | undefined;
     USE_BASYX_RBAC: boolean;
+    MQTT_LOGIN: string | undefined;
+    MQTT_PASSWORD: string | undefined;
 };

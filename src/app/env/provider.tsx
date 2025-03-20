@@ -27,6 +27,8 @@ export const initialEnvValues: EnvironmentalVariables = {
     IMPRINT_URL: '',
     DATA_PRIVACY_URL: '',
     USE_BASYX_RBAC: false,
+    MQTT_LOGIN: '',
+    MQTT_PASSWORD: '',
 };
 
 export const EnvContext = createContext(initialEnvValues);

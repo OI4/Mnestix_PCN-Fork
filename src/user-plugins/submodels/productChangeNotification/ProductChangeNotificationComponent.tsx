@@ -7,6 +7,7 @@ import FiberManualRecordIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Grid, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useMqtt } from 'components/contexts/MqttContext';
+import { useEnv } from 'app/env/provider';
 
 export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisualizationProps) => {
     const t = useTranslations('user-plugins.submodels.productChangeNotification');
@@ -25,10 +26,11 @@ export const ProductChangeNotificationComponent = ({ submodel }: SubmodelVisuali
             (el) => el.idShort === 'EndpointWss',
         ) as Property
     ).value;
+    const env = useEnv();
 
     useEffect(() => {
         if (!client && !isConnected) {
-            subscribe(mqttEndpoint!, mqttBrokerTopic!, 'rabbit-user', 'JvFNXcxtm5AAh3Wj0yry');
+            subscribe(mqttEndpoint!, mqttBrokerTopic!, env.MQTT_LOGIN, env.MQTT_PASSWORD);
         }
     }, []);
 
