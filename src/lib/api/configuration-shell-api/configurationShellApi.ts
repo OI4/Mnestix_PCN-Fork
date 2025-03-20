@@ -42,7 +42,7 @@ export class ConfigurationShellApi implements IConfigurationShellApi {
 
     async processGetIdGenerationSettings(response: Response): Promise<Submodel> {
         const status = response.status;
-        const _headers = {};
+        const _headers: Record<string, string> = {};
         if (response.headers && response.headers.forEach) {
             response.headers.forEach((v, k) => (_headers[k] = v));
         }
@@ -50,10 +50,10 @@ export class ConfigurationShellApi implements IConfigurationShellApi {
             return response.json();
         } else if (status === 400) {
             const _responseText1 = await response.text();
-            return _responseText1 === '' ? null : JSON.parse(_responseText1);
+            return _responseText1 === '' ? Promise.resolve<Submodel>(null as never) : JSON.parse(_responseText1);
         } else if (status !== 200 && status !== 204) {
             const _responseText2 = await response.text();
-            return _responseText2 === '' ? null : JSON.parse(_responseText2);
+            return _responseText2 === '' ? Promise.resolve<Submodel>(null as never) : JSON.parse(_responseText2);
         }
         return Promise.resolve<Submodel>(null as never);
     }
@@ -69,11 +69,7 @@ export class ConfigurationShellApi implements IConfigurationShellApi {
         await this.putSingleSettingValue(`${idShort}.DynamicPart`, values.dynamicPart, 'idGeneration');
     }
 
-    async putSingleSettingValue(
-        path: string,
-        value: string,
-        settingsType: string,
-    ): Promise<Response> {
+    async putSingleSettingValue(path: string, value: string, settingsType: string): Promise<Response> {
         let url_ = `${this.basePath}/configuration/${settingsType}/submodel-elements/${path}/$value`;
         url_ = url_.replace(/[?&]$/, '');
 
@@ -94,7 +90,7 @@ export class ConfigurationShellApi implements IConfigurationShellApi {
 
     async processPutSingleSettingValue(response: Response): Promise<Response> {
         const status = response.status;
-        const _headers = {};
+        const _headers: Record<string, string> = {};
         if (response.headers && response.headers.forEach) {
             response.headers.forEach((v, k) => (_headers[k] = v));
         }

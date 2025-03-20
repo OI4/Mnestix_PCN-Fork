@@ -104,15 +104,14 @@ export function TransferDialog(props: DialogProps) {
         try {
             setIsSubmitting(true);
             const response = await transferAasWithSubmodels(dtoToSubmit);
-            console.log(response);
             processResult(response);
-        } catch (error) {
+        } catch {
             notificationSpawner.spawn({
                 message: intl.formatMessage(messages.mnestix.transfer.errorToast),
                 severity: 'error',
             });
         } finally {
-            props.onClose && props.onClose({}, 'escapeKeyDown');
+            props.onClose?.({}, 'escapeKeyDown');
             setIsSubmitting(false);
         }
     };

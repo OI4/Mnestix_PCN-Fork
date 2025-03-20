@@ -8,15 +8,11 @@ import { DiscoveryServiceApi } from 'lib/api/discovery-service-api/discoveryServ
 import { encodeBase64 } from 'lib/util/Base64Util';
 import { RepoSearchResult, RepositorySearchService } from 'lib/services/repository-access/RepositorySearchService';
 import { mnestixFetch } from 'lib/api/infrastructure';
-import {
-    ApiResponseWrapper,
-    ApiResultStatus,
-    wrapErrorCode,
-    wrapSuccess,
-} from 'lib/util/apiResponseWrapper/apiResponseWrapper';
+import { ApiResponseWrapper, wrapErrorCode, wrapSuccess } from 'lib/util/apiResponseWrapper/apiResponseWrapper';
 import { AasRegistryEndpointEntryInMemory } from 'lib/api/registry-service-api/registryServiceApiInMemory';
 import { Submodel } from '@aas-core-works/aas-core3.0-typescript/types';
 import * as process from 'node:process';
+import { ApiResultStatus } from 'lib/util/apiResponseWrapper/apiResultStatus';
 
 export type AasData = {
     submodelDescriptors: SubmodelDescriptor[] | undefined;
@@ -135,9 +131,16 @@ export class AasSearcher {
         if (!aasSearchResult.isSuccess) {
             return wrapErrorCode(aasSearchResult.errorCode, aasSearchResult.message);
         }
+
+        /**
+         * Extracts the base URL(aasRepositoryOrigin) of the AAS repository, considering that the endpoint URL
+         * may contain a path after the repository root. We take the substring up to '/shells'
+         * to isolate the base URL.
+         */
         const data = {
             submodelDescriptors: registrySearchResult.result.submodelDescriptors,
-            aasRepositoryOrigin: endpoint.origin,
+            aasRepositoryOrigin:
+                endpoint.origin + endpoint.pathname.substring(0, endpoint.pathname.lastIndexOf('/shells')),
         };
         return wrapSuccess(this.createAasResult(aasSearchResult.result, data));
     }

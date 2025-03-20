@@ -5,14 +5,10 @@ import { AssetAdministrationShell, Submodel } from '@aas-core-works/aas-core3.0-
 import { PrismaConnector } from 'lib/services/database/PrismaConnector';
 import { IPrismaConnector } from 'lib/services/database/PrismaConnectorInterface';
 import { Reference } from '@aas-core-works/aas-core3.0-typescript/types';
-import {
-    ApiResponseWrapper,
-    ApiResultStatus,
-    wrapErrorCode,
-    wrapSuccess,
-} from 'lib/util/apiResponseWrapper/apiResponseWrapper';
+import { ApiResponseWrapper, wrapErrorCode, wrapSuccess } from 'lib/util/apiResponseWrapper/apiResponseWrapper';
 import { IAssetAdministrationShellRepositoryApi, ISubmodelRepositoryApi } from 'lib/api/basyx-v3/apiInterface';
 import { PaginationData } from 'lib/api/basyx-v3/types';
+import { ApiResultStatus } from 'lib/util/apiResponseWrapper/apiResultStatus';
 
 export type RepoSearchResult<T> = {
     searchResult: T;
@@ -193,7 +189,7 @@ export class RepositorySearchService {
     async getSubmodelReferencesFromShellFromAllRepos(aasId: string) {
         return this.getFromAllRepos(
             await this.getAasRepositories(),
-            (basePath) => this.getSubmodelReferencesFromShellFromRepo(basePath, aasId),
+            (basePath) => this.getSubmodelReferencesFromShellFromRepo(aasId, basePath),
             `Submodel references for '${aasId}' not found in any repository`,
         );
     }
@@ -221,7 +217,7 @@ export class RepositorySearchService {
     async getFirstSubmodelReferencesFromShellFromAllRepos(aasId: string) {
         return this.getFirstFromAllRepos(
             await this.getAasRepositories(),
-            (basePath) => this.getSubmodelReferencesFromShellFromRepo(basePath, aasId),
+            (basePath) => this.getSubmodelReferencesFromShellFromRepo(aasId, basePath),
             `Submodel references for '${aasId}' not found in any repository`,
         );
     }

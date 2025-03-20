@@ -1,25 +1,9 @@
 import { base64ToBlob, blobToBase64 } from 'lib/util/Base64Util';
-
-export const ApiResultStatus = {
-    SUCCESS: 'SUCCESS',
-    NOT_FOUND: 'NOT_FOUND',
-    UNAUTHORIZED: 'UNAUTHORIZED',
-    UNKNOWN_ERROR: 'UNKNOWN_ERROR',
-    INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
-} as const;
-
-export type ApiResultStatus = (typeof ApiResultStatus)[keyof typeof ApiResultStatus];
+import { ApiResultStatus, httpStatusMessage } from 'lib/util/apiResponseWrapper/apiResultStatus';
 
 export type ApiFileDto = {
     fileContent: string;
     fileType: string;
-}
-
-const httpStatusMessage: Record<number, ApiResultStatus> = {
-    200: ApiResultStatus.SUCCESS,
-    401: ApiResultStatus.UNAUTHORIZED,
-    404: ApiResultStatus.NOT_FOUND,
-    500: ApiResultStatus.INTERNAL_SERVER_ERROR,
 };
 
 const getStatus = (statusCode: number): ApiResultStatus => {
@@ -29,9 +13,7 @@ const getStatus = (statusCode: number): ApiResultStatus => {
     return ApiResultStatus.SUCCESS;
 };
 
-export type ApiResponseWrapper<T> =
-    | ApiResponseWrapperSuccess<T>
-    | ApiResponseWrapperError<T>;
+export type ApiResponseWrapper<T> = ApiResponseWrapperSuccess<T> | ApiResponseWrapperError<T>;
 
 export type ApiResponseWrapperSuccess<T> = {
     isSuccess: true;
@@ -69,19 +51,19 @@ export async function wrapFile(content: Blob): Promise<ApiResponseWrapperSuccess
 }
 
 export async function wrapResponse<T>(response: Response): Promise<ApiResponseWrapper<T>> {
-    const status = getStatus(response.status);
-    
-    if (status !== ApiResultStatus.SUCCESS) {
+    if (!(response.status >= 200 && response.status < 300)) {
+
         const result = await response.json().catch((e) => console.warn(e.message));
+        const status = getStatus(response.status);
         return wrapErrorCode(status, response.statusText, result);
     }
-    
+
     const contentType = response.headers.get('Content-Type') || '';
     if (!contentType || contentType.includes('application/json')) {
         const result = await response.json().catch((e) => console.warn(e.message));
         return wrapSuccess(result);
     }
-    
+
     const fileFromResponse = await response.blob();
     return wrapSuccess(fileFromResponse as T);
 }
